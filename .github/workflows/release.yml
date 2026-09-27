@@ -1,0 +1,77 @@
+name: release
+
+# Tag v<version> (matching Cargo.toml and senclaw-runtime.json) -> build,
+# test, package, and publish the archive + checksum as release assets, the
+# way every sen-* runtime does (runtime-protocol.md §2.3).
+#
+# The Swift compiler runs only on this runner. The published
+# TurboFieldfareServer binary links the Swift runtime that ships with macOS,
+# so a machine that installs the release does not need Swift.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # TurboFieldfare needs macOS 26 and Xcode 26. macos-26 runners have both.
+    runs-on: macos-26
+    steps:
+      - name: checkout sen-turbo-fieldfare
+        uses: actions/checkout@v4
+        with:
+          path: sen-turbo-fieldfare
+
+      # sen-runtime-sdk is a path dependency (../senclaw/...).
+      - name: checkout senclaw (sibling, for sen-runtime-sdk)
+        uses: actions/checkout@v4
+        with:
+          repository: SenClaw/senclaw
+          path: senclaw
+
+      # The Metal engine. Built here, then copied into the runtime package.
+      - name: checkout turbo-fieldfare
+        uses: actions/checkout@v4
+        with:
+          repository: drumih/turbo-fieldfare
+          path: turbo-fieldfare
+
+      - name: Select Xcode 26
+        run: |
+          app=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$app" ]; then
+            echo "Xcode 26 is not on this runner image; available:" >&2
+            ls -d /Applications/Xcode*.app >&2
+            exit 1
+          fi
+          sudo xcode-select -s "$app"
+          swift --version
+
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: test
+        working-directory: sen-turbo-fieldfare
+        run: make test
+
+      - name: build engine
+        working-directory: sen-turbo-fieldfare
+        env:
+          TURBO_ROOT: ${{ github.workspace }}/turbo-fieldfare
+        run: make engine
+
+      - name: package
+        working-directory: sen-turbo-fieldfare
+        env:
+          TURBO_ROOT: ${{ github.workspace }}/turbo-fieldfare
+        run: make package PROFILE=release
+
+      - name: release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            sen-turbo-fieldfare/dist/*.tar.gz
+            sen-turbo-fieldfare/dist/*.sha256

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "sen-turbo-fieldfare",
+  "name": "SenClaw TurboFieldfare",
+  "version": "0.1.0",
+  "description": "TurboFieldfare runtime for SenClaw: Gemma 4 26B-A4B chat and vision on Apple Silicon, about 2 GB of RAM",
+  "type": "llm-engine",
+  "slots": ["gturbo"],
+  "formats": ["gturbo"],
+  "capabilities": ["chat", "vision"],
+  "platforms": ["darwin-arm64"],
+  "accelerator": "metal",
+  "mode": "model",
+  "entry": {
+    "command": "bin/sen-turbo-fieldfare",
+    "args": ["serve", "--host", "{host}", "--port", "{port}", "--model", "{model_path}", "--max-context", "{context_length}"],
+    "env": {}
+  },
+  "health": { "path": "/health", "startupTimeoutSecs": 600 },
+  "api": { "openaiBase": "/v1" },
+  "homepage": "https://github.com/drumih/turbo-fieldfare",
+  "license": "Apache-2.0"
+}

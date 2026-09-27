@@ -1,0 +1,29 @@
+[workspace]
+members = ["."]
+resolver = "2"
+
+[package]
+name = "sen-turbo-fieldfare"
+version = "0.1.0"
+edition = "2021"
+description = "TurboFieldfare LLM runtime for SenClaw: Gemma 4 26B-A4B on Apple Silicon, launched by the daemon and driven over loopback HTTP"
+license = "Apache-2.0"
+repository = "https://github.com/SenClaw/sen-turbo-fieldfare"
+
+[[bin]]
+name = "sen-turbo-fieldfare"
+path = "src/main.rs"
+
+[dependencies]
+sen-runtime-sdk = { path = "../senclaw/crates/sen-runtime-sdk" }
+
+tokio = { version = "1", features = ["full"] }
+axum = { version = "0.7", features = ["json"] }
+serde_json = "1"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+futures-util = "0.3"
+bytes = "1"
+http-body-util = "0.1"
