@@ -10,6 +10,9 @@ name: release
 on:
   push:
     tags: ["v*"]
+  # Re-run a failed tag build from main without moving the tag. Assets are
+  # attached to v<Cargo version> when the run is not itself a tag push.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -40,7 +43,11 @@ jobs:
 
       - name: Select Xcode 26
         run: |
-          app=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          # Upstream turbo-fieldfare CI builds the engine with Xcode 26.3.
+          app=$(ls -d /Applications/Xcode_26.3*.app 2>/dev/null | sort -V | head -1)
+          if [ -z "$app" ]; then
+            app=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          fi
           if [ -z "$app" ]; then
             echo "Xcode 26 is not on this runner image; available:" >&2
             ls -d /Applications/Xcode*.app >&2
@@ -51,6 +58,19 @@ jobs:
 
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
+
+      # senclaw-runtime.json uses slot `gturbo`. The SenClaw/senclaw checkout
+      # may not have that variant yet, and cargo test cannot compile without
+      # it. Apply the slot only when it is missing.
+      - name: SDK knows the gturbo slot
+        run: |
+          sdk="${{ github.workspace }}/senclaw/crates/sen-runtime-sdk/src/manifest.rs"
+          if grep -q 'Slot::Gturbo' "$sdk"; then
+            echo "senclaw SDK already has Slot::Gturbo"
+          else
+            patch -d "${{ github.workspace }}/senclaw" -p1 \
+              < sen-turbo-fieldfare/.github/patches/senclaw-gturbo-slot.patch
+          fi
 
       - name: test
         working-directory: sen-turbo-fieldfare
@@ -71,6 +91,7 @@ jobs:
       - name: release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'v0.1.0' }}
           generate_release_notes: true
           files: |
             sen-turbo-fieldfare/dist/*.tar.gz
