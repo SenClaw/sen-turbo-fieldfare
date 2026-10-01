@@ -69,9 +69,14 @@ dist/sen-turbo-fieldfare-0.1.0-darwin-arm64/bin/TurboFieldfareRepack \
   --text-model ~/.senclaw/local-models/gemma4.gturbo
 ```
 
-Daemon quét `~/.senclaw/local-models/*.gturbo` có `manifest.json` magic
-`GTURBO` và file `model_weights.bin`. Thư mục `*.vision.gturbo` là gói ảnh đi
-kèm, không hiện thành một model riêng.
+Runtime từ chối thư mục không phải đúng checkpoint này: `modelID` phải là
+`mlx-community/gemma-4-26b-a4b-it-4bit` và `sourceSnapshotHash` phải là
+`sha256:bf198c9f5ea6462addca1966e5dd669c407537a876e82cf06db9084c5c850b13`
+(revision `0d77464eeb233a2da68ebf9d7dc4edaac7db956d`). Daemon cũng chỉ liệt kê
+đúng bản đó. Nút tải trong Settings gọi `TurboFieldfareRepack` của gói đã cài,
+không tải snapshot MLX thô.
+
+Thư mục `*.vision.gturbo` là gói ảnh đi kèm, không hiện thành một model riêng.
 
 ## Chạy
 

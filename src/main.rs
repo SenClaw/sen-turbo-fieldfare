@@ -10,6 +10,7 @@
 //! Contract: `senclaw/docs/runtime-protocol.md` §4.2.
 
 mod engine;
+mod model;
 mod proxy;
 
 use std::sync::Arc;
@@ -45,6 +46,7 @@ async fn main() -> anyhow::Result<()> {
     if !model_path.is_dir() {
         anyhow::bail!("--model {} is not a directory", model_path.display());
     }
+    model::require_pinned(&model_path)?;
     let model_id = env
         .model_id
         .clone()
