@@ -29,7 +29,22 @@ khi nào bạn muốn build engine.
 - Một thư mục `.gturbo` đã cài xong (khoảng 14.3 GB). Bản trên máy này đã được
   nối vào `~/.senclaw/local-models/gemma4.gturbo`.
 
-## Cài runtime
+## Cài từ bản release trên GitHub
+
+Settings → Runtime → TurboFieldfare → Cài. Daemon tải
+`sen-turbo-fieldfare-<version>-darwin-arm64.tar.gz` từ release `v<version>`
+và đối chiếu file `.sha256` đăng kèm.
+
+Không mở app thì:
+
+```bash
+make install-release
+```
+
+Lệnh này không gọi `swift` và không build Rust. Nó tải đúng archive của tag
+`v` + version trong `Cargo.toml`.
+
+## Cài runtime từ source
 
 ```bash
 make package          # không gọi swift

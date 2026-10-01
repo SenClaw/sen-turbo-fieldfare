@@ -29,7 +29,7 @@ ARCHIVE := $(DIST)/$(PKG_NAME).tar.gz
 
 export CARGO_TARGET_DIR
 
-.PHONY: build engine test package install-local run-dev clean
+.PHONY: build engine test package install-local install-release run-dev clean
 
 build:
 	cargo build $(CARGO_PROFILE_FLAG)
@@ -62,6 +62,26 @@ package: build
 	tar -C $(DIST) -czf "$(ARCHIVE)" "$(PKG_NAME)"
 	cd $(DIST) && shasum -a 256 "$(notdir $(ARCHIVE))" > "$(notdir $(ARCHIVE)).sha256"
 	@echo "packaged $(ARCHIVE)"
+
+# Download the published GitHub release and install that archive.
+# Does not compile Swift or Rust. The tag is v<Cargo.toml version>.
+install-release:
+	mkdir -p $(DIST)
+	curl -fL "https://github.com/SenClaw/$(ID)/releases/download/v$(VERSION)/$(PKG_NAME).tar.gz" -o "$(ARCHIVE)"
+	curl -fL "https://github.com/SenClaw/$(ID)/releases/download/v$(VERSION)/$(PKG_NAME).tar.gz.sha256" -o "$(ARCHIVE).sha256"
+	cd $(DIST) && shasum -a 256 -c "$(notdir $(ARCHIVE)).sha256"
+	@if command -v senclaw >/dev/null 2>&1; then \
+		senclaw runtime install-local "$(ARCHIVE)"; \
+	else \
+		echo "senclaw not on PATH — installing into ~/.senclaw/runtimes/$(ID)/$(VERSION)/ by hand"; \
+		rm -rf "$(PKG_DIR)" && mkdir -p "$(PKG_DIR)"; \
+		tar -C "$(PKG_DIR)" -xzf "$(ARCHIVE)" --strip-components 1; \
+		dest="$$HOME/.senclaw/runtimes/$(ID)/$(VERSION)"; \
+		rm -rf "$$dest" && mkdir -p "$$dest"; \
+		cp -R "$(PKG_DIR)/bin" "$$dest/bin"; \
+		cp "$(PKG_DIR)/senclaw-runtime.json" "$$dest/senclaw-runtime.json"; \
+		echo "installed to $$dest"; \
+	fi
 
 install-local: package
 	@if command -v senclaw >/dev/null 2>&1; then \
